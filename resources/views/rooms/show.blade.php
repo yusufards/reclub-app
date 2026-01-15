@@ -303,7 +303,7 @@
             @php
                 // FILTER: Hanya tampilkan Confirmed dan Pending. Rejected disembunyikan dari list publik.
                 $activeParticipants = $room->participants->filter(function($participant) {
-                    return in_array($participant->status, ['confirmed', 'pending']);
+                    return in_array($participant->status, ['confirmed', 'requested']);
                 });
             @endphp
 
@@ -335,13 +335,13 @@
                         <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                             @if($participant->status == 'confirmed')
                                 <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">Confirmed</span>
-                            @elseif($participant->status == 'pending')
+                            @elseif($participant->status == 'requested')
                                 <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-50 text-yellow-600 border border-yellow-100">Pending</span>
                             @endif
 
                             @if($isHost && $participant->user_id != $room->host_id)
                                 <div class="flex items-center gap-2">
-                                    @if($participant->status == 'pending')
+                                    @if($participant->status == 'requested')
                                         {{-- TOMBOL TOLAK --}}
                                         <form action="{{ route('participants.reject', ['room' => $room->id, 'participant' => $participant->id]) }}" method="POST">
                                             @csrf

@@ -131,7 +131,7 @@ class RoomController extends Controller
             'venue',
             'sport',
             'participants' => function ($q) {
-                $q->whereIn('status', ['confirmed', 'pending']);
+                $q->whereIn('status', ['confirmed', 'requested']);
             },
             'participants.user'
         ]);
@@ -141,7 +141,7 @@ class RoomController extends Controller
             // Cek manual karena participants di atas sudah difilter
             $isParticipant = RoomParticipant::where('room_id', $room->id)
                 ->where('user_id', Auth::id())
-                ->whereIn('status', ['confirmed', 'pending'])
+                ->whereIn('status', ['confirmed', 'requested'])
                 ->exists();
         }
 
@@ -497,14 +497,14 @@ class RoomController extends Controller
             // [FIX] EAGER LOAD hanya yang aktif (Confirmed/Pending)
             ->with([
                 'participants' => function ($q) {
-                    $q->whereIn('status', ['confirmed', 'pending']);
+                    $q->whereIn('status', ['confirmed', 'requested']);
                 }
             ])
 
             // [FIX UTAMA] HITUNG JUMLAH hanya yang Confirmed/Pending. (Rejected TIDAK DIHITUNG)
             ->withCount([
                 'participants' => function ($q) {
-                    $q->whereIn('status', ['confirmed', 'pending']);
+                    $q->whereIn('status', ['confirmed', 'requested']);
                 }
             ]);
 
@@ -530,7 +530,7 @@ class RoomController extends Controller
         // Hitung statistik interaksi (Host + Join), tapi yang statusnya aktif saja
         return Room::where('host_id', Auth::id())->count() +
             RoomParticipant::where('user_id', Auth::id())
-                ->whereIn('status', ['confirmed', 'pending'])
+                ->whereIn('status', ['confirmed', 'requested'])
                 ->count();
     }
 

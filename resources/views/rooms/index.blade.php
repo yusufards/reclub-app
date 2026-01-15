@@ -72,7 +72,7 @@
              3. SEARCH BAR & FILTER
              ======================================================================= --}}
         <div class="bg-white p-4 rounded-3xl shadow-xl border border-gray-100 mb-8">
-            <form action="{{ request()->routeIs('cari.mabar') ? route('cari.mabar') : route('home') }}" method="GET" id="searchForm" class="flex flex-col md:flex-row gap-4 items-center">
+            <form action="{{ request()->routeIs('cari.mabar') ? route('cari.mabar') : route('home') }}" method="GET" id="searchForm" class="flex flex-col md:flex-row gap-4 items-center w-full">
                 <input type="hidden" name="lat" id="lat" value="{{ request('lat') }}">
                 <input type="hidden" name="lng" id="lng" value="{{ request('lng') }}">
 
@@ -86,23 +86,59 @@
                 </div>
 
                 {{-- Sport Filter --}}
-                <div class="w-full md:w-1/4 relative">
-                    <select name="sport_id" class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition bg-gray-50 focus:bg-white appearance-none cursor-pointer">
-                        <option value="">Semua Olahraga</option>
+                {{-- Custom Sport Filter (Alpine JS) --}}
+                <div class="w-full md:w-1/4 relative min-w-0" x-data="{ open: false, selected: '{{ request('sport_id') }}', label: '{{ $sports->firstWhere('id', request('sport_id'))->name ?? 'Semua Olahraga' }}' }">
+                    <input type="hidden" name="sport_id" :value="selected">
+                    
+                    <button type="button" @click="open = !open" @click.outside="open = false" 
+                        class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 bg-gray-50 text-left focus:outline-none focus:ring-2 focus:ring-emerald-200 transition flex items-center justify-between truncate">
+                        <span x-text="label" class="block truncate text-gray-700"></span>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </button>
+
+                    <div x-show="open" x-transition 
+                         class="absolute z-50 mt-1 w-full bg-white rounded-xl shadow-2xl max-h-60 overflow-auto border border-gray-100 p-1">
+                        <div @click="selected = ''; label = 'Semua Olahraga'; open = false" 
+                             class="cursor-pointer px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-sm text-gray-600 transition">
+                            Semua Olahraga
+                        </div>
                         @foreach($sports as $s)
-                            <option value="{{ $s->id }}" {{ request('sport_id') == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                            <div @click="selected = '{{ $s->id }}'; label = '{{ $s->name }}'; open = false" 
+                                 class="cursor-pointer px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-sm text-gray-600 transition truncate">
+                                {{ $s->name }}
+                            </div>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
 
                 {{-- City Filter --}}
-                <div class="w-full md:w-1/4 relative">
-                    <select name="city" class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition bg-gray-50 focus:bg-white appearance-none cursor-pointer">
-                        <option value="">Semua Kota</option>
+                {{-- Custom City Filter (Alpine JS) --}}
+                <div class="w-full md:w-1/4 relative min-w-0" x-data="{ open: false, selected: '{{ request('city') }}', label: '{{ request('city') ?: 'Semua Kota' }}' }">
+                    <input type="hidden" name="city" :value="selected">
+                    
+                    <button type="button" @click="open = !open" @click.outside="open = false" 
+                        class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-200 bg-gray-50 text-left focus:outline-none focus:ring-2 focus:ring-emerald-200 transition flex items-center justify-between truncate">
+                        <span x-text="label" class="block truncate text-gray-700"></span>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </button>
+
+                    <div x-show="open" x-transition 
+                         class="absolute z-50 mt-1 w-full bg-white rounded-xl shadow-2xl max-h-60 overflow-auto border border-gray-100 p-1">
+                        <div @click="selected = ''; label = 'Semua Kota'; open = false" 
+                             class="cursor-pointer px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-sm text-gray-600 transition">
+                            Semua Kota
+                        </div>
                         @foreach($cities as $c)
-                            <option value="{{ $c }}" {{ request('city') == $c ? 'selected' : '' }}>{{ $c }}</option>
+                            <div @click="selected = '{{ $c }}'; label = '{{ $c }}'; open = false" 
+                                 class="cursor-pointer px-4 py-2 hover:bg-emerald-50 hover:text-emerald-700 rounded-lg text-sm text-gray-600 transition truncate">
+                                {{ $c }}
+                            </div>
                         @endforeach
-                    </select>
+                    </div>
                 </div>
 
                 <div class="flex gap-2 w-full md:w-auto">
