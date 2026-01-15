@@ -210,7 +210,7 @@ class RoomController extends Controller
     /**
      * Join a room (Logic Updated for Re-Join).
      */
-    public function join(Room $room)
+    public function join(Request $request, Room $room)
     {
         if ($this->isAdmin()) {
             return back()->with('error', 'Admin tidak bisa join sebagai peserta.');
@@ -229,7 +229,7 @@ class RoomController extends Controller
             // A. Jika statusnya REJECTED, kita izinkan masuk lagi (Update jadi Pending)
             if ($existingParticipant->status == 'rejected') {
                 $existingParticipant->update([
-                    'status' => 'pending',
+                    'status' => 'requested',
                     'responded_at' => null, // Reset respon host
                     'created_at' => now(),  // Refresh waktu agar naik ke atas di list host
                 ]);
@@ -244,7 +244,7 @@ class RoomController extends Controller
             $participant = RoomParticipant::create([
                 'room_id' => $room->id,
                 'user_id' => Auth::id(),
-                'status' => 'pending',
+                'status' => 'requested',
                 'responded_at' => null,
             ]);
         }
@@ -256,6 +256,17 @@ class RoomController extends Controller
             } catch (\Exception $e) {
                 Log::error('Gagal kirim email join: ' . $e->getMessage());
             }
+        }
+
+        // [NEW] Kirim Notifikasi WhatsApp ke Host
+        if ($participant && $room->host->phone) {
+            $pesanHost = "Halo Host! 👋\n\n" .
+                "Ada peserta baru ingin bergabung di room:\n" .
+                "🏆 *{$room->title}*\n" .
+                "👤 Peserta: *{$request->user()->name}*\n\n" .
+                "Silakan cek dashboard atau email untuk konfirmasi/tolak.";
+
+            $this->sendWhatsapp($room->host->phone, $pesanHost);
         }
 
         return back()->with('success', 'Permintaan bergabung berhasil dikirim! Menunggu konfirmasi Host.');
@@ -387,11 +398,10 @@ class RoomController extends Controller
     //           MAGIC LINK ACTIONS (UNTUK EMAIL)
     // ==========================================================
 
-    public function confirmFromEmail($participantId)
+    public function confirmFromEmail(RoomParticipant $participant)
     {
-        $participant = RoomParticipant::with(['room', 'user'])->find($participantId);
-        if (!$participant)
-            abort(404);
+        // $participant sudah otomatis di-find oleh Laravel (Route Model Binding)
+        // Jadi kita tidak perlu find manual lagi.
 
         if ($participant->status === 'confirmed')
             return $this->magicLinkResponse('success', 'Sudah Dikonfirmasi', 'Peserta ini sudah Anda terima sebelumnya.', $participant);
@@ -406,11 +416,9 @@ class RoomController extends Controller
         return $this->magicLinkResponse('success', 'Berhasil Diterima! 🎉', "Anda telah berhasil MENERIMA {$participant->user->name}. Notifikasi terkirim.", $participant);
     }
 
-    public function rejectFromEmail($participantId)
+    public function rejectFromEmail(RoomParticipant $participant)
     {
-        $participant = RoomParticipant::with(['room', 'user'])->find($participantId);
-        if (!$participant)
-            abort(404);
+        // $participant sudah otomatis di-find oleh Laravel (Route Model Binding)
 
         if ($participant->status === 'rejected')
             return $this->magicLinkResponse('failed', 'Sudah Ditolak', 'Peserta ini sudah Anda tolak sebelumnya.', $participant);

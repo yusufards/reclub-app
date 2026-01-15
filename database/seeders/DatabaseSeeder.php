@@ -24,7 +24,23 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2. Sports (idempotent)
-        $sports = ['Futsal', 'Badminton', 'Basketball', 'Mini Soccer', 'Tennis'];
+        $sports = [
+            'Futsal',
+            'Badminton',
+            'Basketball',
+            'Mini Soccer',
+            'Tennis',
+            'Volleyball',
+            'Table Tennis',
+            'Bowling',
+            'Billiard',
+            'Gym / Fitness',
+            'Swimming',
+            'Jogging',
+            'Cycling',
+            'Golf',
+            'Yoga'
+        ];
         foreach ($sports as $s) {
             Sport::updateOrCreate(
                 ['name' => $s],
@@ -33,14 +49,10 @@ class DatabaseSeeder extends Seeder
         }
 
         // 3. Venues (Jakarta/Bandung sample coords)
-        $venues = [
-            ['name' => 'Gor C-Tra Arena', 'city' => 'Bandung', 'lat' => -6.8906, 'lng' => 107.6335],
-            ['name' => 'Progresif Football', 'city' => 'Bandung', 'lat' => -6.9360, 'lng' => 107.6710],
-            ['name' => 'GBK Arena', 'city' => 'Jakarta', 'lat' => -6.2183, 'lng' => 106.8023],
-            ['name' => 'Pameungpeuk Futsal', 'city' => 'Bandung', 'lat' => -6.9922, 'lng' => 107.6000],
-            ['name' => 'Taman Menteng', 'city' => 'Jakarta', 'lat' => -6.1965, 'lng' => 106.8294],
-        ];
+        // 3. Venues (Full Data from VenueSeeder)
+        $this->call(VenueSeeder::class);
 
+        /*
         foreach ($venues as $v) {
             Venue::create([
                 'name' => $v['name'],
@@ -50,5 +62,6 @@ class DatabaseSeeder extends Seeder
                 'longitude' => $v['lng']
             ]);
         }
+        */
     }
 }

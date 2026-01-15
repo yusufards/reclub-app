@@ -129,8 +129,12 @@ class VenueSeeder extends Seeder
             // Override price dan rating menjadi 0
             $v['price_per_hour'] = 0;
             $v['rating'] = 0;
-            
-            Venue::create($v);
+
+            // Gunakan firstOrCreate agar tidak duplikat jika seeder dijalankan berulang
+            Venue::firstOrCreate(
+                ['name' => $v['name'], 'city' => $v['city']], // Cek existing berdasarkan Nama & Kota
+                $v // Data yang diinsert jika belum ada
+            );
         }
     }
 }

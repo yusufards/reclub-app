@@ -30,7 +30,7 @@ use Cviebrock\EloquentSluggable\Sluggable; // <-- Import Sluggable
  */
 class Room extends Model
 {
-    use HasFactory, Sluggable; // <-- Tambahkan Sluggable
+    use HasFactory; //, Sluggable; // <-- Create migration for slug first if you want to use this
 
     protected $fillable = [
         'host_id',
@@ -58,6 +58,7 @@ class Room extends Model
     /**
      * Tentukan sumber data untuk membuat slug.
      */
+    /*
     public function sluggable(): array
     {
         return [
@@ -67,22 +68,37 @@ class Room extends Model
             ]
         ];
     }
-    
+    */
+
     /**
      * Tentukan kunci model yang digunakan untuk Route Model Binding.
      * Menggunakan slug agar URL terlihat bersih.
      */
+    /*
     public function getRouteKeyName()
     {
         return 'slug';
     }
+    */
 
     // --- RELATIONS ---
 
-    public function venue() { return $this->belongsTo(Venue::class); }
-    public function sport() { return $this->belongsTo(Sport::class); }
-    public function host() { return $this->belongsTo(User::class, 'host_id'); }
-    public function participants() { return $this->hasMany(RoomParticipant::class); }
+    public function venue()
+    {
+        return $this->belongsTo(Venue::class);
+    }
+    public function sport()
+    {
+        return $this->belongsTo(Sport::class);
+    }
+    public function host()
+    {
+        return $this->belongsTo(User::class, 'host_id');
+    }
+    public function participants()
+    {
+        return $this->hasMany(RoomParticipant::class);
+    }
 
     // Haversine Scope
     public function scopeNearby($query, $lat, $lng)
