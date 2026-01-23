@@ -35,38 +35,31 @@ class SocialAuthController extends Controller
             $driver = $this->socialite->driver('google');
             /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
             $googleUser = $driver->stateless()->user();
-            
+
             // 1. Cek apakah user dengan email ini sudah ada?
             $user = User::where('email', $googleUser->getEmail())->first();
 
             if ($user) {
                 // === SKENARIO 1: USER LAMA ===
-                // Jika user sudah ada, kita CUKUP update Google ID-nya saja.
-                // JANGAN update password atau role agar akun Admin tidak rusak.
                 $user->update([
                     'google_id' => $googleUser->getId(),
-                    // Opsional: jika ingin nama selalu sinkron dengan Google, uncomment baris bawah:
-                    // 'name' => $googleUser->getName(), 
                 ]);
+                Auth::login($user);
+                return redirect()->route('home');
             } else {
                 // === SKENARIO 2: USER BARU (REGISTER) ===
-                // Buat user baru dengan settingan default
                 $user = User::create([
                     'name' => $googleUser->getName(),
                     'email' => $googleUser->getEmail(),
                     'google_id' => $googleUser->getId(),
-                    'password' => null, // Password kosong karena via Google
-                    'role' => 'user',   // User baru selalu jadi 'user' biasa
-                    'email_verified_at' => now(), // Auto verify
+                    'password' => null,
+                    'role' => 'user',
+                    'email_verified_at' => now(),
                 ]);
+                Auth::login($user);
+                return redirect()->route('preferences.edit')->with('success', 'Selamat datang! Silakan atur preferensi olahraga Anda.');
             }
-    
-            // 2. Login User
-            Auth::login($user);
-    
-            // 3. Redirect ke Home
-            return redirect()->route('home');
-            
+
         } catch (\Exception $e) {
             Log::error('Google Login Error: ' . $e->getMessage());
             return redirect()->route('login')->with('error', 'Login Gagal. Silakan coba lagi.');

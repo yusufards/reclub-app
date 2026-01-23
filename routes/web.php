@@ -80,6 +80,10 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // --- PREFERENCES (Onboarding) ---
+    Route::get('/preferences', [\App\Http\Controllers\UserPreferenceController::class, 'edit'])->name('preferences.edit');
+    Route::post('/preferences', [\App\Http\Controllers\UserPreferenceController::class, 'update'])->name('preferences.update');
+
     // --- USER DASHBOARD ---
     Route::get('/dashboard', function () {
         $user = Auth::user();
@@ -159,3 +163,36 @@ Route::get('/participants/{participant}/confirm-email', [RoomController::class, 
 
 Route::get('/participants/{participant}/reject-email', [RoomController::class, 'rejectFromEmail'])
     ->name('participants.reject_email')->middleware('signed');
+
+// --- DEBUG ---
+Route::get('/debug-check', function () {
+    $sportId = 1;
+    $venueId = 1;
+
+    $venue = \App\Models\Venue::find($venueId);
+    $allUsers = \App\Models\User::all();
+
+    $results = [];
+    $results['total_users'] = $allUsers->count();
+    $results['venue'] = $venue;
+
+    $results['users_detail'] = $allUsers->map(function ($u) use ($venue) {
+        $dist = -1;
+        if ($venue && $u->latitude) {
+            $dist = (6371 * acos(
+                cos(deg2rad($venue->latitude)) * cos(deg2rad($u->latitude)) * cos(deg2rad($u->longitude) - deg2rad($venue->longitude)) +
+                sin(deg2rad($venue->latitude)) * sin(deg2rad($u->latitude))
+            ));
+        }
+        return [
+            'id' => $u->id,
+            'name' => $u->name,
+            'lat' => $u->latitude,
+            'lng' => $u->longitude,
+            'sports' => $u->sports->pluck('id'),
+            'distance_to_venue_1' => $dist
+        ];
+    });
+
+    return $results;
+});

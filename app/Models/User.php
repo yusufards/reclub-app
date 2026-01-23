@@ -20,7 +20,9 @@ class User extends Authenticatable
         'avatar',
         'bio',
         'google_id',
-        'has_password', 
+        'has_password',
+        'latitude',
+        'longitude',
     ];
 
     protected $hidden = [
@@ -59,7 +61,29 @@ class User extends Authenticatable
     // HELPER METHODS
     // =================================================================
 
-    public function isAdmin() {
+    public function isAdmin()
+    {
         return $this->role === 'admin';
+    }
+
+    // =================================================================
+    // NEW FEATURES: PREFERENCES & LOCATION
+    // =================================================================
+
+    public function sports()
+    {
+        return $this->belongsToMany(Sport::class, 'sport_user');
+    }
+
+    public function scopeNearby($query, $lat, $lng, $radius = 10)
+    {
+        return $query->select('users.*')
+            ->selectRaw("
+                (6371 * acos(
+                    cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) +
+                    sin(radians(?)) * sin(radians(latitude))
+                )) AS distance_km
+            ", [$lat, $lng, $lat])
+            ->having('distance_km', '<', $radius);
     }
 }

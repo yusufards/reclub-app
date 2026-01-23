@@ -52,6 +52,17 @@ class DatabaseSeeder extends Seeder
         // 3. Venues (Full Data from VenueSeeder)
         $this->call(VenueSeeder::class);
 
+        // 4. Attach ALL Sports to ALL Venues (Initial Setup)
+        // This ensures every venue supports every sport by default, 
+        // preventing empty selections until specific data is managed.
+        $allSports = Sport::all();
+        $allVenues = Venue::all();
+
+        foreach ($allVenues as $venue) {
+            // syncWithoutDetaching avoids duplicates if run multiple times
+            $venue->sports()->syncWithoutDetaching($allSports->pluck('id'));
+        }
+
         /*
         foreach ($venues as $v) {
             Venue::create([

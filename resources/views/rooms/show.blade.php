@@ -172,8 +172,25 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     Catatan Host
                 </h3>
-                <p class="text-gray-700 leading-relaxed whitespace-pre-line text-sm">
-                    {{ $room->description ?: 'Tidak ada catatan khusus dari host.' }}
+                <p class="text-gray-700 leading-relaxed whitespace-pre-line text-sm break-words">
+                    @php
+                        // 1. Escape HTML terlebih dahulu untuk mencegah XSS
+                        $description = e($room->description ?: 'Tidak ada catatan khusus dari host.');
+                        
+                        // 2. Regex untuk mendeteksi URL (http/https/www)
+                        $pattern = '/(https?:\/\/[^\s]+|www\.[^\s]+)/';
+                        
+                        // 3. Replace dengan anchor tag yang aman
+                        $description = preg_replace_callback($pattern, function($matches) {
+                            $url = $matches[0];
+                            // Tambahkan http jika dimulai dengan www
+                            if (strpos($url, 'www.') === 0) {
+                                $url = 'http://' . $url;
+                            }
+                            return '<a href="' . $url . '" target="_blank" class="text-emerald-600 font-bold hover:underline">' . $matches[0] . '</a>';
+                        }, $description);
+                    @endphp
+                    {!! $description !!}
                 </p>
             </div>
         </div>

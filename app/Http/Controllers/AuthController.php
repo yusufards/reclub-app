@@ -10,11 +10,13 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function showLogin() {
+    public function showLogin()
+    {
         return view('auth.login');
     }
 
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         $request->validate([
             'email' => 'required|email',
             'password' => 'required'
@@ -41,7 +43,7 @@ class AuthController extends Controller
         // 3. Jika Email & Password Benar, Lakukan Login
         Auth::login($user, $request->filled('remember'));
         $request->session()->regenerate();
-        
+
         ActivityLog::create([
             'actor_id' => Auth::id(),
             'action' => 'login_email',
@@ -50,11 +52,13 @@ class AuthController extends Controller
         return redirect()->intended(route('home'));
     }
 
-    public function showRegister() {
+    public function showRegister()
+    {
         return view('auth.register');
     }
 
-    public function register(Request $request) {
+    public function register(Request $request)
+    {
         // Custom Pesan Error Bahasa Indonesia
         $messages = [
             'name.required' => 'Nama lengkap wajib diisi.',
@@ -89,10 +93,11 @@ class AuthController extends Controller
             'action' => 'register_email',
         ]);
 
-        return redirect()->route('home')->with('success', 'Pendaftaran berhasil! Selamat datang.');
+        return redirect()->route('preferences.edit')->with('success', 'Pendaftaran berhasil! Silakan lengkapi profil Anda.');
     }
 
-    public function logout(Request $request) {
+    public function logout(Request $request)
+    {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

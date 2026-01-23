@@ -167,34 +167,106 @@
 </div>
 
 <script>
-function cariLapanganDenganData() {
-    // Ambil Value dari Inputan
-    const title = document.getElementById('title')?.value || '';
-    const sportId = document.getElementById('sport_id')?.value || '';
-    const desc = document.getElementById('description')?.value || '';
-    const startDate = document.getElementById('start_datetime')?.value || '';
-    const maxPart = document.getElementById('max_participants')?.value || '';
-    const totalCost = document.getElementById('total_cost')?.value || ''; // Menggunakan total_cost
-    const venueId = document.getElementById('venue_id')?.value || '';
-
-    // Tentukan Base URL route cari lapangan
-    // ASUMSI: Anda memiliki route untuk mencari venue, misalnya 'venues.search'
-    let baseUrl = "{{ route('venues.search') }}"; 
-
-    // Rakit Parameter
-    const params = new URLSearchParams();
+    console.log("Venue-Sport Script Loaded!");
     
-    // Tambahkan hanya jika value-nya tidak kosong
-    if (title) params.set('title', title);
-    if (sportId) params.set('sport_id', sportId);
-    if (desc) params.set('description', desc);
-    if (startDate) params.set('start_datetime', startDate);
-    if (maxPart) params.set('max_participants', maxPart);
-    if (totalCost) params.set('total_cost', totalCost);
-    if (venueId) params.set('venue_id', venueId);
+    // Data Venues & Sports dari Backend
+    const venuesData = @json($venues);
+    console.log("All Venues Data:", venuesData); // Debug di console
+
+    // DOM Elements
+    const venueSelect = document.getElementById('venue_id');
+    const sportSelect = document.getElementById('sport_id');
     
-    // Pindah halaman (Redirect) membawa data-data tadi
-    window.location.href = `${baseUrl}?${params.toString()}`;
-}
+    function filterSports(selectedVenueId) {
+        // 1. Jika tidak ada venue yang dipilih atau Venue Kosong -> Disable Sport Select
+        if (!selectedVenueId) {
+            sportSelect.disabled = true;
+            sportSelect.value = ""; // Reset ke default
+            return;
+        }
+
+        const venue = venuesData.find(v => v.id === selectedVenueId);
+        
+        if (venue && venue.sports) {
+            sportSelect.disabled = false; // Enable kembali jika venue valid
+            
+            const supportedSportIds = venue.sports.map(s => s.id);
+            
+            Array.from(sportSelect.options).forEach(opt => {
+                if (opt.value === "") return;
+                
+                const sportId = parseInt(opt.value);
+                const isSupported = supportedSportIds.includes(sportId);
+                
+                if (isSupported) {
+                    opt.style.display = "";
+                    opt.disabled = false;
+                    opt.innerText = opt.innerText.replace(' (Tidak Tersedia)', '');
+                } else {
+                    opt.style.display = "none";
+                    opt.disabled = true;
+                    if (!opt.innerText.includes('(Tidak Tersedia)')) {
+                        opt.innerText += ' (Tidak Tersedia)';
+                    }
+                }
+            });
+
+            // 2. Logic Reset: Jika sport yang sedang dipilih TIDAK ada di daftar support -> Reset
+            if (sportSelect.value && !supportedSportIds.includes(parseInt(sportSelect.value))) {
+                sportSelect.value = "";
+            }
+        } else {
+             // Fallback jika data venue tidak ketemu di JS object
+             sportSelect.disabled = true;
+        }
+    }
+
+    // Event Listener: Saat Venue Dipilih
+    venueSelect.addEventListener('change', function() {
+        // ParseInt akan return NaN jika string kosong, yang falsy
+        filterSports(parseInt(this.value));
+    });
+
+    // Event Listener: Saat Load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cek state awal
+        if (venueSelect.value) {
+            filterSports(parseInt(venueSelect.value));
+        } else {
+            // Default: Disable sport jika belum ada venue
+            sportSelect.disabled = true;
+        }
+    });
+
+    // ... (rest of code)
+
+    sportSelect.addEventListener('change', function() {
+        // ... (Keep existing logic or simplify if needed)
+    });
+
+    // Fungsi Cari Lapangan (Original)
+    function cariLapanganDenganData() {
+        // ... (Keep existing logic)
+        const title = document.getElementById('title')?.value || '';
+        const sportId = document.getElementById('sport_id')?.value || '';
+        const desc = document.getElementById('description')?.value || '';
+        const startDate = document.getElementById('start_datetime')?.value || '';
+        const maxPart = document.getElementById('max_participants')?.value || '';
+        const totalCost = document.getElementById('total_cost')?.value || ''; 
+        const venueId = document.getElementById('venue_id')?.value || '';
+
+        let baseUrl = "{{ route('venues.search') }}"; 
+        const params = new URLSearchParams();
+        
+        if (title) params.set('title', title);
+        if (sportId) params.set('sport_id', sportId);
+        if (desc) params.set('description', desc);
+        if (startDate) params.set('start_datetime', startDate);
+        if (maxPart) params.set('max_participants', maxPart);
+        if (totalCost) params.set('total_cost', totalCost);
+        if (venueId) params.set('venue_id', venueId);
+        
+        window.location.href = `${baseUrl}?${params.toString()}`;
+    }
 </script>
 @endsection

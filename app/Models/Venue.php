@@ -59,4 +59,12 @@ class Venue extends Model
             ->where('start_datetime', '>=', now())     // Hanya yang belum lewat (masa depan)
             ->orderBy('start_datetime', 'asc');        // Urutkan dari yang terdekat
     }
+
+    /**
+     * 3. Relasi ke Sports (Many-to-Many)
+     */
+    public function sports()
+    {
+        return $this->belongsToMany(Sport::class, 'venue_sport');
+    }
 }

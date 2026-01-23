@@ -38,7 +38,8 @@ class RoomController extends Controller
     public function create(Request $request)
     {
         $sports = Sport::all();
-        $venues = Venue::all();
+        // Hanya ambil venue yang punya setidaknya 1 cabang olahraga
+        $venues = Venue::with('sports')->has('sports')->get();
         $selectedVenueId = $request->get('venue_id');
 
         $initialData = $request->only([
@@ -67,6 +68,18 @@ class RoomController extends Controller
             'max_participants' => 'required|integer|min:2',
             'total_cost' => 'required|numeric|min:0',
         ]);
+
+        // [SEC] Validasi Relasi Venue & Sport & Cek Ketersediaan
+        $venueSupportsSport = DB::table('venue_sport')
+            ->where('venue_id', $validated['venue_id'])
+            ->where('sport_id', $validated['sport_id'])
+            ->exists();
+
+        if (!$venueSupportsSport) {
+            return back()->withInput()->withErrors([
+                'sport_id' => 'Cabang olahraga ini tidak tersedia di lokasi yang dipilih.'
+            ]);
+        }
 
         if (!$this->isAdmin() && $this->hasScheduleConflict($request->start_datetime)) {
             return back()->withInput()->withErrors([
@@ -112,6 +125,39 @@ class RoomController extends Controller
 
             return $room;
         });
+
+        // [NEW] Notifikasi ke User Sekitar yang Suka Olahraga Ini
+        try {
+            // Debug Log
+            Log::info("RoomCreated: Mencari user sekitar untuk Room ID {$room->id}, Sport ID {$validated['sport_id']}, Venue ID {$validated['venue_id']}");
+
+            $roomLat = Venue::find($validated['venue_id'])->latitude;
+            $roomLng = Venue::find($validated['venue_id'])->longitude;
+
+            $nearbyUsers = \App\Models\User::where('id', '!=', Auth::id())
+                ->whereHas('sports', function ($q) use ($validated) {
+                    $q->where('sports.id', $validated['sport_id']);
+                })
+                ->nearby(
+                    $roomLat ?? 0,
+                    $roomLng ?? 0,
+                    50
+                ) // TEMPORARY: Naikkan radius ke 50km
+                ->get();
+
+            Log::info("RoomCreated: Ditemukan " . $nearbyUsers->count() . " user nearby.");
+
+            if ($nearbyUsers->count() > 0) {
+                foreach ($nearbyUsers as $u) {
+                    Log::info(" - Target: {$u->name} ({$u->phone})");
+                }
+                \Illuminate\Support\Facades\Notification::send($nearbyUsers, new \App\Notifications\RoomCreatedNotification($room));
+                Log::info("RoomCreated: Notifikasi didispatch.");
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Failed to send room notification: " . $e->getMessage());
+        }
 
         if ($this->isAdmin()) {
             return redirect()->route('admin.dashboard')->with('success', 'Room berhasil dibuat oleh Admin.');

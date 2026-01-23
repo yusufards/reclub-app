@@ -15,8 +15,8 @@ class WhatsAppChannel
         }
 
         $message = $notification->toWhatsApp($notifiable);
-        $to = $notifiable->phone; 
-        
+        $to = $notifiable->phone;
+
         if (!$to) {
             Log::warning("WhatsAppChannel: No phone number for user " . $notifiable->id);
             return;
@@ -29,6 +29,8 @@ class WhatsAppChannel
                 $this->sendTwilio($to, $message);
             } elseif ($provider === 'wa_cloud') {
                 $this->sendMeta($to, $message);
+            } elseif ($provider === 'fonte') {
+                $this->sendFonte($to, $message);
             } else {
                 // Generic HTTP/Log for dev
                 Log::info("WA_STUB ($to): $message");
@@ -38,7 +40,8 @@ class WhatsAppChannel
         }
     }
 
-    protected function sendTwilio($to, $message) {
+    protected function sendTwilio($to, $message)
+    {
         $sid = env('TWILIO_ACCOUNT_SID');
         $token = env('TWILIO_AUTH_TOKEN');
         $from = env('TWILIO_WHATSAPP_FROM');
@@ -52,10 +55,11 @@ class WhatsAppChannel
             ]);
     }
 
-    protected function sendMeta($to, $message) {
+    protected function sendMeta($to, $message)
+    {
         $phoneId = env('WA_CLOUD_PHONE_ID');
         $token = env('WA_CLOUD_TOKEN');
-        
+
         Http::withToken($token)
             ->post("https://graph.facebook.com/v17.0/$phoneId/messages", [
                 'messaging_product' => 'whatsapp',
@@ -63,5 +67,23 @@ class WhatsAppChannel
                 'type' => 'text',
                 'text' => ['body' => $message]
             ]);
+    }
+
+    protected function sendFonte($to, $message)
+    {
+        $token = env('FONNTE_TOKEN');
+        $url = env('FONNTE_URL', 'https://api.fonnte.com/send');
+
+        Log::info("WhatsAppChannel: Sending to $to via Fonte...");
+
+        $response = Http::withHeaders([
+            'Authorization' => $token,
+        ])->post($url, [
+                    'target' => $to,
+                    'message' => $message,
+                    'countryCode' => '62',
+                ]);
+
+        Log::info("WhatsAppChannel: Fonte Response: " . $response->body());
     }
 }
